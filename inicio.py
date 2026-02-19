@@ -19,7 +19,7 @@ matplotlib.use('Agg')
 
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(
-    page_title="Monitor Hidráulico | Cuenca del Laja",
+    page_title="Cuenca del Laja",
     page_icon="💧",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -578,8 +578,8 @@ def main():
         <div class="welcome-box">
             <h2 style="color:var(--accent);">SISTEMA EN ESPERA</h2>
             <p style="color:var(--text-secondary); margin-bottom:20px;">
-                Conexión lista con API Coordinador Eléctrico Nacional.<br>
-                Presione <b>ACTUALIZAR DATOS</b> para iniciar la telemetría.
+                Conexión API Coordinador Eléctrico Nacional.<br>
+                Presione <b>ACTUALIZAR DATOS</b> para iniciar.
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -644,4 +644,5 @@ def main():
     render_dga_section()
 
 if __name__ == "__main__":
+
     main()
