@@ -278,7 +278,7 @@ def render_header():
         <div>
             <h1 style='margin-bottom:0;'>MONITOR HIDRÁULICO</h1>
             <p style='color:var(--text-secondary); font-family:"JetBrains Mono"; font-size:0.9rem;'>
-                CUENCA DEL LAJA • SISTEMA INTERCONECTADO
+                CUENCA DEL LAJA
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -552,14 +552,14 @@ def render_map(data_list):
 
 def render_dga_section():
     """Sección DGA."""
-    st.markdown("### 📡 FUENTES OFICIALES (DGA/SNIA)")
+    st.markdown("### 📡 DIRECCIÓN GENERAL DE AGUAS")
     
     st.markdown("""
     <div class="dga-container">
         <div>
-            <h4 style="margin:0; color:#2da44e;">Portal Hidrológico DGA</h4>
+            <h4 style="margin:0; color:#2da44e;">Portal Hidrológico</h4>
             <p style="margin:5px 0 0 0; font-size:0.9rem; color:var(--text-secondary);">
-                Acceso directo a datos oficiales de limnimetría, fluviometría y meteorología.
+                Acceso datos oficiales de limnimetría, fluviometría y meteorología.
             </p>
         </div>
         <a href="https://snia.mop.gob.cl/dgasat/pages/dgasat_param/dgasat_param.jsp?param=1" target="_blank" class="dga-link">
@@ -646,3 +646,4 @@ def main():
 if __name__ == "__main__":
 
     main()
+
