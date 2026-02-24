@@ -173,6 +173,18 @@ EMBALSES = {
     'HP ABANICO': 'Embalse Abanico',
 }
 
+# --- ESTACIONES HIDROLÓGICAS DGA ---
+ESTACIONES_DGA = [
+    {'nombre': 'Canal Litre en Bocatoma Rio Laja',             'lat': -37.281, 'lon': -71.966, 'bna': '08380008-9'},
+    {'nombre': 'Canal Mirrihue',                               'lat': -37.326, 'lon': -71.655, 'bna': '08375006-5'},
+    {'nombre': 'Canal Zañartu Salida Laguna Trupan',           'lat': -37.278, 'lon': -71.821, 'bna': '08122001-8'},
+    {'nombre': 'Canal Collao',                                 'lat': -37.306, 'lon': -71.649, 'bna': '08375005-7'},
+    {'nombre': 'Canal Unificado Mirrihue Ortiz Pinochet',      'lat': -37.335, 'lon': -71.640, 'bna': '08375011-1'},
+    {'nombre': 'Rio Laja En Tucapel',                          'lat': -37.286, 'lon': -71.981, 'bna': '08380002-K'},
+    {'nombre': 'Canal Laja Diguillin En B.T. Rio Huepil (DOH)','lat': -37.197, 'lon': -72.004, 'bna': '08122005-0'},
+    {'nombre': 'Rio Laja En Tucapel 2',                        'lat': -37.283, 'lon': -71.987, 'bna': '08380006-2'},
+]
+
 # --- SESIÓN DE REQUESTS ---
 if 'session' not in st.session_state:
     st.session_state.session = requests.Session()
@@ -568,6 +580,214 @@ def render_dga_section():
     </div>
     """, unsafe_allow_html=True)
 
+
+# --- NUEVO APARTADO: MAPA DE ESTACIONES HIDROLÓGICAS DGA ---
+
+def render_mapa_estaciones_dga():
+    """Mapa interactivo con estaciones hidrológicas DGA y sus códigos BNA."""
+    st.markdown("### 🌊 ESTACIONES HIDROLÓGICAS — CAUDALES RELEVANTES")
+    st.markdown(
+        "<p style='color:var(--text-secondary); font-family:\"JetBrains Mono\"; font-size:0.8rem; margin-top:-10px; margin-bottom:16px;'>"
+        "Haga clic sobre cada marcador para ver el código BNA de la estación."
+        "</p>",
+        unsafe_allow_html=True
+    )
+
+    m_dga = folium.Map(
+        location=[-37.29, -71.82],
+        zoom_start=10,
+        tiles='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        attr='Esri',
+        prefer_canvas=True
+    )
+    # Capa de referencia con nombres
+    folium.TileLayer(
+        tiles='https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+        attr='Esri',
+        overlay=True,
+        opacity=0.55
+    ).add_to(m_dga)
+
+    color_estacion = "#fcb900"   # ámbar — diferencia de los marcadores de centrales
+
+    for est in ESTACIONES_DGA:
+        popup_html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;700;800&display=swap');
+                body {{ margin:0; padding:0; font-family:'Inter', sans-serif; }}
+                .est-card {{
+                    width: 80vw;
+                    max-width: 320px;
+                    background: rgba(14, 17, 23, 0.96);
+                    backdrop-filter: blur(12px);
+                    border: 1px solid rgba(252, 185, 0, 0.35);
+                    border-radius: 10px;
+                    padding: 14px 16px;
+                    color: #f0f6fc;
+                    box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+                }}
+                .est-title {{
+                    font-size: 13px;
+                    font-weight: 800;
+                    color: #fff;
+                    margin-bottom: 10px;
+                    line-height: 1.3;
+                    letter-spacing: -0.3px;
+                }}
+                .bna-row {{
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    background: rgba(252, 185, 0, 0.08);
+                    border: 1px solid rgba(252, 185, 0, 0.25);
+                    border-radius: 6px;
+                    padding: 8px 10px;
+                    margin-bottom: 8px;
+                }}
+                .bna-label {{
+                    font-family: 'JetBrains Mono';
+                    font-size: 9px;
+                    text-transform: uppercase;
+                    color: #fcb900;
+                    letter-spacing: 1px;
+                    white-space: nowrap;
+                }}
+                .bna-value {{
+                    font-family: 'JetBrains Mono';
+                    font-size: 15px;
+                    font-weight: 700;
+                    color: #fcb900;
+                    letter-spacing: 1px;
+                }}
+                .coords-row {{
+                    display: flex;
+                    justify-content: space-between;
+                    font-family: 'JetBrains Mono';
+                    font-size: 9px;
+                    color: #555e6a;
+                    margin-top: 2px;
+                }}
+                .dga-badge {{
+                    display: inline-block;
+                    font-family: 'JetBrains Mono';
+                    font-size: 9px;
+                    color: #2da44e;
+                    border: 1px solid rgba(45,164,78,0.4);
+                    border-radius: 3px;
+                    padding: 2px 6px;
+                    text-transform: uppercase;
+                    letter-spacing: 1px;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="est-card">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+                    <span class="dga-badge">DGA · Fluviometría</span>
+                    <span style="font-family:'JetBrains Mono'; font-size:9px; color:#555e6a;">● ACTIVA</span>
+                </div>
+                <div class="est-title">{est['nombre']}</div>
+                <div class="bna-row">
+                    <div>
+                        <div class="bna-label">Código BNA</div>
+                        <div class="bna-value">{est['bna']}</div>
+                    </div>
+                </div>
+                <div class="coords-row">
+                    <span>LAT {est['lat']:.4f}°</span>
+                    <span>LON {est['lon']:.4f}°</span>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+
+        marker_html = f"""
+        <div style="position:relative; display:flex; align-items:center; justify-content:center; width:26px; height:26px;">
+            <div style="
+                position:absolute;
+                width:0; height:0;
+                border-left: 7px solid transparent;
+                border-right: 7px solid transparent;
+                border-top: 13px solid {color_estacion};
+                bottom: 0; left: 50%; transform: translateX(-50%);
+                filter: drop-shadow(0 0 4px {color_estacion});
+                z-index: 2;
+            "></div>
+            <div style="
+                position:absolute;
+                top: 2px;
+                width: 14px; height: 14px;
+                background: {color_estacion};
+                border-radius: 50% 50% 50% 0;
+                transform: rotate(-45deg);
+                border: 2px solid #0e1117;
+                box-shadow: 0 0 8px {color_estacion};
+                z-index: 3;
+            "></div>
+        </div>
+        """
+
+        folium.Marker(
+            location=[est['lat'], est['lon']],
+            popup=folium.Popup(popup_html, max_width=340),
+            tooltip=f"📍 {est['nombre']} | BNA: {est['bna']}",
+            icon=DivIcon(html=marker_html, icon_size=(26, 26), icon_anchor=(13, 26))
+        ).add_to(m_dga)
+
+    st_folium(m_dga, width="100%", height=480, returned_objects=[])
+
+    # Tabla resumen debajo del mapa
+    st.markdown("""
+    <div style="margin-top:16px; overflow-x:auto;">
+        <table style="
+            width:100%;
+            border-collapse:collapse;
+            font-family:'JetBrains Mono', monospace;
+            font-size:0.78rem;
+            color:var(--text-secondary);
+        ">
+            <thead>
+                <tr style="border-bottom:1px solid rgba(255,255,255,0.1);">
+                    <th style="text-align:left; padding:8px 10px; color:var(--text-primary); font-size:0.7rem; letter-spacing:1px; text-transform:uppercase;">Estación</th>
+                    <th style="text-align:center; padding:8px 10px; color:var(--text-primary); font-size:0.7rem; letter-spacing:1px; text-transform:uppercase;">Código BNA</th>
+                    <th style="text-align:right; padding:8px 10px; color:var(--text-primary); font-size:0.7rem; letter-spacing:1px; text-transform:uppercase;">Coordenadas</th>
+                </tr>
+            </thead>
+            <tbody>
+    """ + "".join([
+        f"""
+                <tr style="border-bottom:1px solid rgba(255,255,255,0.05); transition:background 0.15s;" 
+                    onmouseover="this.style.background='rgba(252,185,0,0.05)'" 
+                    onmouseout="this.style.background='transparent'">
+                    <td style="padding:8px 10px; color:var(--text-secondary);">{est['nombre']}</td>
+                    <td style="padding:8px 10px; text-align:center;">
+                        <span style="
+                            background:rgba(252,185,0,0.1);
+                            border:1px solid rgba(252,185,0,0.3);
+                            color:#fcb900;
+                            border-radius:4px;
+                            padding:2px 8px;
+                            font-weight:700;
+                            letter-spacing:1px;
+                        ">{est['bna']}</span>
+                    </td>
+                    <td style="padding:8px 10px; text-align:right; color:#555e6a;">
+                        {est['lat']:.3f}°, {est['lon']:.3f}°
+                    </td>
+                </tr>
+        """
+        for est in ESTACIONES_DGA
+    ]) + """
+            </tbody>
+        </table>
+    </div>
+    """, unsafe_allow_html=True)
+
+
 # --- MAIN EXECUTION ---
 
 def main():
@@ -583,6 +803,8 @@ def main():
             </p>
         </div>
         """, unsafe_allow_html=True)
+        st.divider()
+        render_mapa_estaciones_dga()
         st.divider()
         render_dga_section()
         return
@@ -641,9 +863,10 @@ def main():
             st.info("Sin datos históricos recientes.")
 
     st.divider()
+    render_mapa_estaciones_dga()
+    st.divider()
     render_dga_section()
 
 if __name__ == "__main__":
 
     main()
-
