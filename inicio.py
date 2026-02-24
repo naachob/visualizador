@@ -516,6 +516,7 @@ def render_map(data_list):
     st_folium(m, width="100%", height=500, returned_objects=[])
 
 def render_dga_map():
+    st.markdown("### Estaciones DGA relevantes")
     m_dga = folium.Map(
         location=[-37.28, -71.80], 
         zoom_start=10, 
