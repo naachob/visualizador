@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import streamlit as st
 import requests
 import pandas as pd
@@ -14,10 +13,8 @@ import io
 import base64
 import matplotlib.dates as mdates
 
-# Configurar backend no interactivo
 matplotlib.use('Agg')
 
-# --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(
     page_title="Cuenca del Laja",
     page_icon="💧",
@@ -25,7 +22,6 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- ESTILOS CSS (RESPONSIVE INDUSTRIAL UI) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
@@ -43,7 +39,6 @@ st.markdown("""
         --border: 1px solid rgba(240, 246, 252, 0.1);
     }
 
-    /* Global Overrides */
     .stApp {
         background-color: var(--bg-core);
         font-family: 'Inter', sans-serif;
@@ -52,7 +47,6 @@ st.markdown("""
     h1, h2, h3 { font-family: 'Inter', sans-serif; letter-spacing: -0.5px; }
     code, .mono { font-family: 'JetBrains Mono', monospace !important; }
 
-    /* Custom Cards */
     .eng-card {
         background-color: var(--bg-card);
         border: var(--border);
@@ -66,7 +60,6 @@ st.markdown("""
         box-shadow: 0 4px 20px rgba(0,0,0,0.3);
     }
 
-    /* Metrics Styling */
     .metric-value {
         font-family: 'Inter', sans-serif;
         font-weight: 800;
@@ -83,12 +76,10 @@ st.markdown("""
         margin-bottom: 4px;
     }
     
-    /* Progress Bar Override */
     .stProgress > div > div > div > div {
         background-color: var(--accent);
     }
 
-    /* DGA Link Section */
     .dga-container {
         border: 1px solid #238636;
         background: rgba(35, 134, 54, 0.05);
@@ -98,7 +89,7 @@ st.markdown("""
         align-items: center;
         justify-content: space-between;
         gap: 20px;
-        flex-wrap: wrap; /* Permitir wrap en móvil */
+        flex-wrap: wrap;
     }
     .dga-link {
         background-color: #238636;
@@ -114,7 +105,6 @@ st.markdown("""
     }
     .dga-link:hover { background-color: #2ea043; }
 
-    /* Welcome Box */
     .welcome-box {
         text-align: center;
         padding: 60px 20px;
@@ -123,35 +113,27 @@ st.markdown("""
         margin-top: 40px;
     }
 
-    /* --- MOBILE OPTIMIZATIONS --- */
     @media (max-width: 768px) {
-        /* Ajustar padding global */
         .block-container { padding-left: 1rem; padding-right: 1rem; }
         
-        /* Tarjetas más compactas */
         .eng-card { padding: 15px; margin-bottom: 12px; }
         .metric-value { font-size: 1.8rem; }
         
-        /* Header adaptable */
         h1 { font-size: 1.5rem; }
         p { font-size: 0.85rem; }
         
-        /* DGA Link Stacked */
         .dga-container { flex-direction: column; text-align: left; align-items: stretch; padding: 15px; }
         .dga-link { width: 100%; margin-top: 10px; }
         
-        /* Ajustes de Mapa */
         iframe { border-radius: 8px; }
     }
 
-    /* Hide Streamlit Elements */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
 
-# --- CONSTANTES ---
 INFO_CENTRALES = {
     'HE EL TORO': {'id': 121, 'coords': [-37.2750, -71.4528]},
     'HE ANTUCO':  {'id': 116, 'coords': [-37.3098, -71.6267]},
@@ -184,14 +166,12 @@ ESTACIONES_DGA = [
     {"nombre": "Rio Laja En Tucapel 2", "lat": -37.283, "lon": -71.987, "bna": "08380006-2"}
 ]
 
-# --- SESIÓN DE REQUESTS ---
 if 'session' not in st.session_state:
     st.session_state.session = requests.Session()
     st.session_state.session.headers.update({
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
     })
 
-# --- LÓGICA DE CONSULTA API ---
 @st.cache_data(ttl=600)
 def obtener_datos_central(id_central, nombre_central):
     url = "https://sipub.api.coordinador.cl/generacion-real/v3/findByDate"
@@ -275,12 +255,8 @@ def obtener_datos_central(id_central, nombre_central):
     except Exception as e:
         return {'error': True, 'mensaje': f'Parseo: {e}'}
 
-# Variables de estado
 if 'datos'     not in st.session_state: st.session_state.datos     = None
 if 'ts_update' not in st.session_state: st.session_state.ts_update = None
-
-
-# --- UI COMPONENTS ---
 
 def render_header():
     col1, col2 = st.columns([3, 1])
@@ -321,7 +297,6 @@ def render_header():
             st.caption(f"Última sync: {st.session_state.ts_update}")
 
 def render_kpi_card(item):
-    """Renderiza tarjeta de métricas con estilo industrial."""
     res = item['datos']
     if res.get('error'):
         st.markdown(f"""
@@ -367,68 +342,53 @@ def render_kpi_card(item):
 """
     st.markdown(html, unsafe_allow_html=True)
 
-# --- CHART GENERATION (MATPLOTLIB) ---
-
 def generate_chart_img(data_list, efficiency=1.0):
-    """Genera una imagen PNG base64 de un gráfico de dos ejes."""
     if not data_list: return None
     
-    # Preparar DataFrame
     df = pd.DataFrame(data_list)
     df['dt'] = pd.to_datetime(df['fecha_hora'])
     df = df.sort_values('dt').tail(24) 
     
     if df.empty: return None
 
-    # Cálculos
     df['gen'] = df['gen_real_mw']
     df['caudal'] = df['gen'] / efficiency
 
-    # Estilo Dark Mode Profesional
     plt.style.use('dark_background')
     
-    # Dimensiones optimizadas para móvil/web
     fig, ax1 = plt.subplots(figsize=(5.5, 3), dpi=100)
     fig.patch.set_facecolor('#0e1117') 
     ax1.set_facecolor('#0e1117')
 
-    # Eje 1: Generación (Área Azul)
     color_gen = '#2e9eff'
     ax1.plot(df['dt'], df['gen'], color=color_gen, linewidth=2, label='Gen (MW)')
     ax1.fill_between(df['dt'], df['gen'], color=color_gen, alpha=0.15)
     
-    # Configuración Eje Y Izquierdo
     ax1.set_ylabel('Generación (MW)', color=color_gen, fontsize=8, fontweight='bold', labelpad=5)
     ax1.tick_params(axis='y', labelcolor=color_gen, labelsize=8, color=color_gen)
     ax1.spines['left'].set_color(color_gen)
     ax1.spines['left'].set_linewidth(0.5)
 
-    # Eje 2: Caudal (Línea Verde Punteada)
     ax2 = ax1.twinx()
     color_flow = '#00e5b0'
     ax2.plot(df['dt'], df['caudal'], color=color_flow, linewidth=2, linestyle='--', label='Caudal (m³/s)')
     
-    # Configuración Eje Y Derecho
     ax2.set_ylabel('Caudal Est. (m³/s)', color=color_flow, fontsize=8, fontweight='bold', rotation=270, labelpad=15)
     ax2.tick_params(axis='y', labelcolor=color_flow, labelsize=8, color=color_flow)
     ax2.spines['right'].set_color(color_flow)
     ax2.spines['right'].set_linewidth(0.5)
 
-    # Configuración Eje X (Tiempo)
     ax1.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
     ax1.tick_params(axis='x', rotation=0, labelsize=8, colors='#8b949e')
     
-    # Limpieza visual general
     ax1.spines['top'].set_visible(False)
     ax2.spines['top'].set_visible(False)
     ax1.spines['bottom'].set_color('#30363d')
     ax2.spines['bottom'].set_visible(False)
     
-    # Grid
     ax1.grid(visible=True, axis='y', color='#30363d', linestyle=':', linewidth=0.5)
     ax1.grid(visible=False, axis='x')
 
-    # Layout y guardado
     plt.tight_layout()
     
     buf = io.BytesIO()
@@ -440,8 +400,6 @@ def generate_chart_img(data_list, efficiency=1.0):
     return f'<img src="data:image/png;base64,{img_base64}" style="width:100%; border-radius:6px;">'
 
 def render_map(data_list):
-    """Mapa satelital interactivo con gráficos responsive."""
-    # MAPA SATELITAL ESRI
     m = folium.Map(
         location=[-37.32, -71.55], 
         zoom_start=11, 
@@ -463,11 +421,9 @@ def render_map(data_list):
         is_active = res['gen_mw'] > 0
         color = "#00e5b0" if is_active else "#8b949e"
         
-        # Generar gráfico
         eficiencia = EFICIENCIAS.get(res['nombre'], 1.0)
         chart_img = generate_chart_img(res.get('full_history', []), efficiency=eficiencia)
         
-        # Popup Responsive: max-width relativo al viewport
         popup_html = f"""
         <!DOCTYPE html>
         <html>
@@ -476,8 +432,8 @@ def render_map(data_list):
                 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;700;800&display=swap');
                 body {{ margin: 0; padding: 0; background: transparent; font-family: 'Inter', sans-serif; }}
                 .popup-card {{
-                    width: 85vw; /* ANCHO RESPONSIVE */
-                    max-width: 380px; /* TOPE MÁXIMO */
+                    width: 85vw;
+                    max-width: 380px;
                     background: rgba(14, 17, 23, 0.95);
                     backdrop-filter: blur(10px);
                     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -513,7 +469,6 @@ def render_map(data_list):
         </html>
         """
         
-        # Marcador "Baliza"
         marker_html = f"""
         <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px;">
             <div style="
@@ -546,12 +501,11 @@ def render_map(data_list):
 
         folium.Marker(
             location=item['info']['coords'],
-            popup=folium.Popup(popup_html, max_width=400), # Ancho máximo contenedor
+            popup=folium.Popup(popup_html, max_width=400),
             tooltip=f"{res['nombre']} | {res['gen_mw']} MW",
             icon=DivIcon(html=marker_html, icon_size=(24, 24), icon_anchor=(12, 12))
         ).add_to(m)
     
-    # CSS Hack para popups transparentes
     st.markdown("""
     <style>
     .leaflet-popup-content-wrapper { background: transparent !important; box-shadow: none !important; border: none !important; }
@@ -562,10 +516,6 @@ def render_map(data_list):
     st_folium(m, width="100%", height=500, returned_objects=[])
 
 def render_dga_map():
-    """Genera un mapa específico para las estaciones de la DGA."""
-    st.markdown("### 🌊 ESTACIONES FLUVIOMÉTRICAS DGA")
-    
-    # Centro promedio calculado en base a las coordenadas proporcionadas
     m_dga = folium.Map(
         location=[-37.28, -71.80], 
         zoom_start=10, 
@@ -592,7 +542,6 @@ def render_dga_map():
     st_folium(m_dga, width="100%", height=400, returned_objects=[], key="dga_map")
 
 def render_dga_section():
-    """Sección DGA."""
     st.markdown("### 📡 DIRECCIÓN GENERAL DE AGUAS")
     
     st.markdown("""
@@ -608,8 +557,6 @@ def render_dga_section():
         </a>
     </div>
     """, unsafe_allow_html=True)
-
-# --- MAIN EXECUTION ---
 
 def main():
     render_header()
@@ -687,5 +634,4 @@ def main():
     render_dga_section()
 
 if __name__ == "__main__":
-
     main()
